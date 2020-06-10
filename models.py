@@ -104,6 +104,9 @@ def getrandomforestave(file_path, loopcount):
     #dataset = dataset.dropna()
     print("post NA drop: " + str(dataset.shape))
 
+    dataset['y.Adm.Cr'] = np.log(dataset['y.Adm.Cr'])
+    dataset['y.Admission.INR'] = np.log(dataset['y.Admission.INR'])
+
     # One-hot encode the data using pandas get_dummies
     dataset = pd.get_dummies(dataset)
     # Display the first 5 rows of the last 12 columns
@@ -111,7 +114,8 @@ def getrandomforestave(file_path, loopcount):
     y = dataset['z.bad_Y']
     X = dataset.drop(['z.bad_Y'], axis=1)
     X = X.drop(['z.bad_N'], axis=1)
-    X = X.drop(['y.BMI'], axis=1)
+    #X = X.drop(['y.BMI'], axis=1)
+
 
     combined_score = 0
 

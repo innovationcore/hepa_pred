@@ -9,11 +9,11 @@ print("RF AVE: "  + str(ave))
 print("RF MAX: "  + str(max))
 print("RF MIN: "  + str(min))
 
-rf_score = getrandomforest(file_path)
-print("Random Forest Single Run Score: "  + str(rf_score))
+#rf_score = getrandomforest(file_path)
+#print("Random Forest Single Run Score: "  + str(rf_score))
 
-nn_score = getnn(file_path)
-print("Neural Network Score: "  + str(nn_score))
+#nn_score = getnn(file_path)
+#print("Neural Network Score: "  + str(nn_score))
 
 
 
