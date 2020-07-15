@@ -13,8 +13,8 @@ class StatusMessageBar(Bar):
     status_msg = 'Idle'
     run = 0
 
-    def set_run(self, run):
-        self.run = run
+    def set_run(self, _run):
+        self.run = _run
 
     def set_status(self, msg):
         self.status_msg = msg
@@ -92,8 +92,10 @@ with open(results_file, 'w') as csvfile:
         bar.next()
         try:
             result_row = []
-            rf_clf = pipeline.make_pipeline(preprocessing.StandardScaler(), ensemble.RandomForestClassifier(**rf_options))
-            lr_clf = pipeline.make_pipeline(preprocessing.StandardScaler(), linear_model.LogisticRegressionCV(**lr_options))
+            rf_clf = pipeline.make_pipeline(preprocessing.StandardScaler(),
+                                            ensemble.RandomForestClassifier(**rf_options))
+            lr_clf = pipeline.make_pipeline(preprocessing.StandardScaler(),
+                                            linear_model.LogisticRegressionCV(**lr_options))
             svm_clf = pipeline.make_pipeline(preprocessing.StandardScaler(), svm.LinearSVC(**svm_options))
             if do_rf:
                 bar.set_status(f"Evaluating RandomForestClassifier")
@@ -162,7 +164,8 @@ with open(results_file, 'w') as csvfile:
                     print(f"ROC AUC: {svm_test_roc_auc}")
                     print(f"Specificity: {svm_test_spec}")
                     print(f"Sensitivity: {svm_test_sens}")
-                result_row += [svm_test_acc, svm_test_ap, svm_test_roc_auc, svm_test_kappa, svm_test_spec, svm_test_sens]
+                result_row += [svm_test_acc, svm_test_ap, svm_test_roc_auc,
+                               svm_test_kappa, svm_test_spec, svm_test_sens]
                 bar.next()
             if include_5_features:
                 bar.set_status(f"Finding top {top_n_features} features for this training set")
@@ -190,7 +193,10 @@ with open(results_file, 'w') as csvfile:
                     rf_clf_limit_feats.fit(x_train_limit_feats, y_train_limit_feats)
                     train_pred_limit_feats = rf_clf_limit_feats.predict(x_train_limit_feats)
                     if print_to_screen:
-                        print(f"Training Accuracy: {metrics.accuracy_score(y_train_limit_feats, train_pred_limit_feats)*100:0.2f}%")
+                        print(
+                            f"Training Accuracy: "
+                            f"{metrics.accuracy_score(y_train_limit_feats, train_pred_limit_feats)*100:0.2f}%"
+                        )
                     test_pred_limit_feats = rf_clf_limit_feats.predict(x_test_limit_feats)
                     rf_5_test_acc = metrics.accuracy_score(y_test_limit_feats, test_pred_limit_feats)
                     rf_5_test_kappa = metrics.cohen_kappa_score(y_test_limit_feats, test_pred_limit_feats)
@@ -214,7 +220,9 @@ with open(results_file, 'w') as csvfile:
                     lr_clf_limit_feats.fit(x_train_limit_feats, y_train_limit_feats)
                     train_pred_limit_feats = lr_clf_limit_feats.predict(x_train_limit_feats)
                     if print_to_screen:
-                        print(f"Training Accuracy: {metrics.accuracy_score(y_train_limit_feats, train_pred_limit_feats)*100:0.2f}%")
+                        print(f"Training Accuracy: "
+                              f"{metrics.accuracy_score(y_train_limit_feats, train_pred_limit_feats)*100:0.2f}%"
+                              )
                     test_pred_limit_feats = lr_clf_limit_feats.predict(x_test_limit_feats)
                     lr_5_test_acc = metrics.accuracy_score(y_test_limit_feats, test_pred_limit_feats)
                     lr_5_test_kappa = metrics.cohen_kappa_score(y_test_limit_feats, test_pred_limit_feats)
