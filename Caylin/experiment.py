@@ -9,8 +9,12 @@ from dataset import HepADataset
 
 class StatusMessageBar(Bar):
     fill = '*'
-    suffix = '[%(index)d/%(max)d] %(status_msg)s'
+    suffix = 'Run %(run)d: %(status_msg)s'
     status_msg = 'Idle'
+    run = 0
+
+    def set_run(self, run):
+        self.run = run
 
     def set_status(self, msg):
         self.status_msg = msg
@@ -24,7 +28,7 @@ hepa_data_file = "../../hepa.csv"
 results_file = "experiment-results.csv"
 top_n_features = 3
 use_select_k_best = True
-runs = 10
+runs = 100
 print_to_screen = False
 include_5_features = True
 do_rf = True
@@ -76,10 +80,11 @@ with open(results_file, 'w') as csvfile:
     bar = StatusMessageBar('Running', max=(experiments_per_run * runs))
     run = 1
     while run <= runs:
-        bar.set_status(f"Starting run: {run}")
+        bar.set_run(run)
+        bar.set_status(f"Starting run")
         if print_to_screen:
             print("Loading HEPA dataset")
-        dataset = HepADataset(hepa_data_file, fill_in_missing=False, initial_partition=.75)
+        dataset = HepADataset(hepa_data_file, initial_partition=.8)
         x_train, y_train = dataset.get_training()
         x_test, y_test = dataset.get_testing()
         if print_to_screen:
