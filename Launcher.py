@@ -1,13 +1,29 @@
-from models import getrandomforest, getnn, getrandomforestave
+from models import getrandomforest, getnn, getrandomforestave, getrandomforeststats_all, getrandomforeststats_3, \
+    getnnstats, getrandomforeststats_fold
 
-file_path = "/Users/cody/Downloads/hepa.csv"
+file_path = "hepaa.csv"
 loopcount = 1000
 
+'''
 ave, max, min = getrandomforestave(file_path, loopcount)
 print("RF LoopCount: "  + str(loopcount))
 print("RF AVE: "  + str(ave))
 print("RF MAX: "  + str(max))
 print("RF MIN: "  + str(min))
+'''
+
+#acc, kappa, ap, auc, specificity, sensitivity = getrandomforeststats_all(file_path, loopcount)
+
+#acc, kappa, ap, auc, specificity, sensitivity = getrandomforeststats_3(file_path, loopcount)
+#print("acc: " + str(acc) + " ap: " + str(ap) + " auc:" + str(auc) + " kappa: " + str(kappa) + " specificity: " + str(specificity) + " sensitivity: " + str(sensitivity))
+
+acc, kappa, ap, auc, specificity, sensitivity = getrandomforeststats_fold(file_path, 5)
+print("acc: " + str(acc) + " ap: " + str(ap) + " auc:" + str(auc) + " kappa: " + str(kappa) + " specificity: " + str(specificity) + " sensitivity: " + str(sensitivity))
+
+#acc, kappa, ap, auc, specificity, sensitivity = getnnstats(file_path, 5)
+#print("acc: " + str(acc) + " ap: " + str(ap) + " auc:" + str(auc) + " kappa: " + str(kappa) + " specificity: " + str(specificity) + " sensitivity: " + str(sensitivity))
+
+#getrandomforest(file_path)
 
 #rf_score = getrandomforest(file_path)
 #print("Random Forest Single Run Score: "  + str(rf_score))
