@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+</head>
+<body>
+<form id='predict-form' action="/predict" method="post">
+    INR: <input type="text" name="c" value="1" /><br>
+    Cr: <input type="text" name="e" value="1" /><br>
+    ALT: <input type="text" name="d" value="1" /><br>
+    WBC: <input type="text" name="b" value="1" /><br>
+    Cirrhosis: <select name="a"><option value="1">Yes</option><option value="0">No</option></select><br>
+    <input type="submit" />
+</form><br>
+<div id='predict-results'>
+
+</div>
+<script type="text/javascript">
+    var form = document.getElementById('predict-form');
+    var results_div = document.getElementById('predict-results');
+
+    form.onsubmit = function (e) {
+        // stop the regular form submission
+        e.preventDefault();
+
+        // collect the form data while iterating over the inputs
+        var to_predict = []
+        var data = [];
+        for (var i = 0, ii = form.length; i < ii; ++i) {
+            var input = form[i];
+            if (input.name) {
+                if (input.value)
+                    data.push(parseFloat(input.value));
+                else
+                    data.push(0)
+            }
+        }
+        to_predict.push(data);
+
+        // construct an HTTP request
+        var xhr = new XMLHttpRequest();
+        xhr.open(form.method, form.action, true);
+        xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+
+        // send the collected data as JSON
+        xhr.send(JSON.stringify(to_predict));
+
+        xhr.onloadend = function () {
+            var results = JSON.parse(xhr.response);
+            if (results.success) {
+                results_div.innerText = "Predicted: " + (results.results[0] === 0 ? "No" : "Yes")
+            } else {
+                results_div.innerText = "Failed! (Error: " + results.error + ")"
+            }
+        };
+    };
+</script>
+</body>
+</html>

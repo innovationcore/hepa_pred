@@ -1,5 +1,6 @@
 import csv
 import numpy as np
+import pickle
 
 from progress.bar import Bar
 from sklearn import ensemble, feature_selection, linear_model, metrics, pipeline, preprocessing, svm
@@ -28,7 +29,7 @@ hepa_data_file = "../../hepa.csv"
 results_file = "experiment-results.csv"
 top_n_features = 3
 use_select_k_best = True
-runs = 100
+runs = 1
 print_to_screen = False
 include_5_features = True
 do_rf = True
@@ -44,9 +45,9 @@ rf_options = {
     'max_leaf_nodes': None,
 }
 lr_options = {
-    'cv': 10,
-    'max_iter': 1000,
+    'max_iter': 10000,
     'solver': 'liblinear',
+    'scoring': 'roc_auc', #['accuracy', 'adjusted_mutual_info_score', 'adjusted_rand_score', 'average_precision', 'balanced_accuracy', 'completeness_score', 'explained_variance', 'f1', 'f1_macro', 'f1_micro', 'f1_samples', 'f1_weighted', 'fowlkes_mallows_score', 'homogeneity_score', 'jaccard', 'jaccard_macro', 'jaccard_micro', 'jaccard_samples', 'jaccard_weighted', 'max_error', 'mutual_info_score', 'neg_brier_score', 'neg_log_loss', 'neg_mean_absolute_error', 'neg_mean_gamma_deviance', 'neg_mean_poisson_deviance', 'neg_mean_squared_error', 'neg_mean_squared_log_error', 'neg_median_absolute_error', 'neg_root_mean_squared_error', 'normalized_mutual_info_score', 'precision', 'precision_macro', 'precision_micro', 'precision_samples', 'precision_weighted', 'r2', 'recall', 'recall_macro', 'recall_micro', 'recall_samples', 'recall_weighted', 'roc_auc', 'roc_auc_ovo', 'roc_auc_ovo_weighted', 'roc_auc_ovr', 'roc_auc_ovr_weighted', 'v_measure_score']
 }
 svm_options = {
     'max_iter': 500000,
@@ -240,6 +241,8 @@ with open(results_file, 'w') as csvfile:
                         print(f"Sensitivity: {lr_5_test_sens}")
                     result_row += [lr_5_test_acc, lr_5_test_ap, lr_5_test_roc_auc,
                                    lr_5_test_kappa, lr_5_test_spec, lr_5_test_sens]
+                    with open('model.pkl', 'wb') as f:
+                        pickle.dump(lr_clf_limit_feats, f)
                     bar.next()
                 if do_svm:
                     bar.set_status(f"Starting Top {top_n_features} Feature SupportVectorMachineClassifier")
