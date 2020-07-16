@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+</head>
+<body>
+<form id='predict-form' action="/predict" method="post">
+    Feature A: <input type="text" name="a" value="1" /><br>
+    Feature B: <input type="text" name="b" value="1" /><br>
+    Feature C: <input type="text" name="c" value="1" /><br>
+    <input type="submit" />
+</form><br>
+<div id='predict-results'>
+
+</div>
+<script type="text/javascript">
+    var form = document.getElementById('predict-form');
+    var results_div = document.getElementById('predict-results');
+
+    form.onsubmit = function (e) {
+        // stop the regular form submission
+        e.preventDefault();
+
+        // collect the form data while iterating over the inputs
+        var to_predict = []
+        var data = [];
+        for (var i = 0, ii = form.length; i < ii; ++i) {
+            var input = form[i];
+            if (input.name) {
+                data.push(parseFloat(input.value));
+            }
+        }
+        to_predict.push(data);
+
+        // construct an HTTP request
+        var xhr = new XMLHttpRequest();
+        xhr.open(form.method, form.action, true);
+        xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+
+        // send the collected data as JSON
+        xhr.send(JSON.stringify(to_predict));
+
+        xhr.onloadend = function () {
+            var results = JSON.parse(xhr.response);
+            if (results.success) {
+                results_div.innerText = "Predicted: " + results.results
+            } else {
+                results_div.innerText = "Failed! (Error: " + results.error + ")"
+            }
+        };
+    };
+</script>
+</body>
+</html>
