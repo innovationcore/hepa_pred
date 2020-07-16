@@ -6,9 +6,11 @@
 </head>
 <body>
 <form id='predict-form' action="/predict" method="post">
-    Feature A: <input type="text" name="a" value="1" /><br>
-    Feature B: <input type="text" name="b" value="1" /><br>
-    Feature C: <input type="text" name="c" value="1" /><br>
+    INR: <input type="text" name="c" value="1" /><br>
+    Cr: <input type="text" name="e" value="1" /><br>
+    ALT: <input type="text" name="d" value="1" /><br>
+    WBC: <input type="text" name="b" value="1" /><br>
+    Cirrhosis: <select name="a"><option value="0">Yes</option><option value="1">No</option></select><br>
     <input type="submit" />
 </form><br>
 <div id='predict-results'>
