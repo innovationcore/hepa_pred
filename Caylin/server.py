@@ -15,10 +15,10 @@ def predict():
     ret = { 'success': False, }
     data = request.get_json()
     try:
-        with open('model.pkl', 'rb') as f:
-            clr = pickle.load(f)
-            ret['results'] = clr.predict(data).tolist()
-            ret['success'] = True
+        clr = pickle.load(open('model.pkl', 'rb'))
+        scaler = pickle.load(open('scaler.pkl', 'rb'))
+        ret['results'] = clr.predict(scaler.transform(data)).tolist()
+        ret['success'] = True
     except Exception as e:
         ret['error'] = str(e)
     return jsonify(ret)

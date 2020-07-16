@@ -1,2 +1,2 @@
-model.pkl
-experiment-results.csv
+*.pkl
+*.csv
