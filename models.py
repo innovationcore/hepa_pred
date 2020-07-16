@@ -1,7 +1,9 @@
+import json
+import uuid
 from statistics import stdev
-
 import keras
-from sklearn.model_selection import KFold
+import pickle
+from sklearn.model_selection import KFold, cross_validate, RepeatedKFold
 import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
@@ -19,7 +21,68 @@ from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.tree import export_graphviz
 
+def getsample(file_path):
 
+    dataset = pd.read_csv(file_path)
+
+    # dataset = dataset.fillna(dataset.mean())
+    dataset = dataset.fillna(dataset.mode().iloc[0])
+    # print(dataset.columns[dataset.isna().any()].tolist())
+
+    # print("pre NA drop: " + str(dataset.shape))
+    # dataset = dataset.dropna()
+    # print("post NA drop: " + str(dataset.shape))
+
+    # dataset['y.Adm.Cr'] = np.log(dataset['y.Adm.Cr'])
+    # dataset['y.Admission.INR'] = np.log(dataset['y.Admission.INR'])
+
+    # One-hot encode the data using pandas get_dummies
+    dataset = pd.get_dummies(dataset)
+    # Display the first 5 rows of the last 12 columns
+
+    '''
+y.Admission.INR
+y.Adm.Cr
+x.Cirrhosis
+y.Adm.WBC
+y.Adm.ALT
+    '''
+
+    y = dataset['z.bad_Y']
+    X = dataset.drop(['z.bad_Y'], axis=1)
+    X = X.drop(['z.bad_N'], axis=1)
+    # X = X.drop(['y.BMI'], axis=1)
+
+    drop_list = ['x.HEP.C.RNA_N', 'x.GEND_F', 'x.GEND_M', 'x.HEP.C.RNA_P', 'x.Hep.B_N', 'x.Hep.B_P',
+                 'y.Adm.Platelet', 'y.Adm.Alb', 'x.alcohol.use_HEAV<6M', 'x.alcohol.use_HEAV>6M', 'y.Adm.AST',
+                 'y.Adm.ALP', 'x.alcohol.use_MOD', 'x.alcohol.use_SOC', 'y.AGE', 'y.BMI', 'y.Adm.Bili',
+                 'x.DM_Y', 'x.HTN_N', 'x.HTN_Y', 'y.Adm.Na',
+                 'x.Cirrhosis_N', 'x.DM_N', 'z.bad_N']
+
+    # 'x.Cirrhosis_N', 'x.Cirrhosis_Y', 'y.Adm.Na', 'y.Adm.ALT', 'y.Adm.ALP', 'y.Adm.Alb',
+    for term in drop_list:
+        dataset = dataset.drop([term], axis=1)
+
+    pd.set_option('display.max_columns', None)
+
+    print(dataset)
+
+
+
+def getmodelstats(model, X, y):
+
+    test_pred = model.predict(X)
+
+    acc = metrics.accuracy_score(y, test_pred)
+    kappa = metrics.cohen_kappa_score(y, test_pred)
+    ap = metrics.average_precision_score(y, test_pred)
+    auc = metrics.roc_auc_score(y, test_pred)
+
+    tn, fp, fn, tp = confusion_matrix(y, test_pred).ravel()
+    specificity = tn / (tn + fp)
+    sensitivity = tp / (tp + fn)
+
+    return sensitivity, specificity, auc, acc, ap, kappa
 
 def getrandomforest(file_path):
     # Read in data and display first 5 rows
@@ -112,6 +175,122 @@ def getrandomforest(file_path):
     '''
 
     return acc, ap, auc, kappa
+
+def getrandomforeststats_fold_cv(file_path, kfolds):
+    # Read in data and display first 5 rows
+    dataset = pd.read_csv(file_path)
+
+    #dataset = dataset.fillna(dataset.mean())
+    dataset = dataset.fillna(dataset.mode().iloc[0])
+    #print(dataset.columns[dataset.isna().any()].tolist())
+
+    #print("pre NA drop: " + str(dataset.shape))
+    #dataset = dataset.dropna()
+    #print("post NA drop: " + str(dataset.shape))
+
+    #dataset['y.Adm.Cr'] = np.log(dataset['y.Adm.Cr'])
+    #dataset['y.Admission.INR'] = np.log(dataset['y.Admission.INR'])
+
+    # One-hot encode the data using pandas get_dummies
+    dataset = pd.get_dummies(dataset)
+    # Display the first 5 rows of the last 12 columns
+
+    y = dataset['z.bad_Y']
+    X = dataset.drop(['z.bad_Y'], axis=1)
+    X = X.drop(['z.bad_N'], axis=1)
+    #X = X.drop(['y.BMI'], axis=1)
+
+    '''
+y.Admission.INR
+y.Adm.Cr
+x.Cirrhosis
+y.Adm.WBC
+y.Adm.ALT
+    '''
+
+    # drop_list = ['x.HEP.C.RNA_N','y.Adm.WBC','x.GEND_F','x.GEND_M','x.HEP.C.RNA_P','x.Hep.B_N','x.Hep.B_P','y.Adm.Platelet','y.Adm.Alb','x.alcohol.use_HEAV<6M','x.alcohol.use_HEAV>6M','y.Adm.AST','y.Adm.ALP','x.alcohol.use_MOD','x.alcohol.use_SOC','y.AGE','y.BMI','y.Adm.Bili','y.Admission.INR','x.DM_Y','x.HTN_N','x.HTN_Y','y.Adm.Cr','y.Adm.Na','y.Adm.ALT','x.Cirrhosis_N','x.Cirrhosis_Y','x.DM_N']
+
+    drop_list = ['x.HEP.C.RNA_N', 'x.GEND_F', 'x.GEND_M', 'x.HEP.C.RNA_P', 'x.Hep.B_N', 'x.Hep.B_P',
+                 'y.Adm.Platelet', 'y.Adm.Alb', 'x.alcohol.use_HEAV<6M', 'x.alcohol.use_HEAV>6M', 'y.Adm.AST',
+                 'y.Adm.ALP', 'x.alcohol.use_MOD', 'x.alcohol.use_SOC', 'y.AGE', 'y.BMI', 'y.Adm.Bili',
+                 'x.DM_Y', 'x.HTN_N', 'x.HTN_Y', 'y.Adm.Na',
+                 'x.Cirrhosis_N','x.DM_N']
+
+
+    #'x.Cirrhosis_N', 'x.Cirrhosis_Y', 'y.Adm.Na', 'y.Adm.ALT', 'y.Adm.ALP', 'y.Adm.Alb',
+    for term in drop_list:
+        X = X.drop([term], axis=1)
+
+
+    pd.set_option('display.max_columns', None)
+
+    print(X.head())
+    #scale values
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    #X = scaler.fit_transform(X)
+
+    #for final testing
+    Xs = scaler.fit_transform(X)
+    ys = y
+
+    #write reults file
+    f = open("models.csv", "w")
+    f.write("model_id,sensitivity_all,sensitivity_model,specificity_all,specificity_model,auc_all,auc_model\n")
+
+    #kf = KFold(n_splits=kfolds)
+    kf = RepeatedKFold(n_splits=kfolds, n_repeats=1000)
+    kf.get_n_splits(X)
+
+    for train_index, test_index in kf.split(X):
+        #print("TRAIN:", train_index, "TEST:", test_index)
+        train_X, test_X = X.iloc[train_index], X.iloc[test_index]
+        scaler.fit(train_X)
+        train_X = scaler.transform(train_X)
+        test_X = scaler.transform(test_X)
+
+        #train_X = scaler.fit_transform(train_X)
+        #test_X = scaler.fit_transform(test_X)
+
+        train_y, test_y = y.iloc[train_index], y.iloc[test_index]
+
+        parameters = {'bootstrap': True,
+                      'min_samples_leaf': 3,
+                      'n_estimators': 50,
+                      'min_samples_split': 10,
+                      'max_features': 'sqrt',
+                      'max_depth': 6,
+                      'max_leaf_nodes': None}
+
+        RF_model = RandomForestClassifier(**parameters)
+        RF_model.fit(train_X, train_y)
+
+        sensitivity, specificity, auc, acc, ap, kappa = getmodelstats(RF_model,Xs,ys)
+
+        sensitivity_cut = 0.86
+        specificity_cut = 0.85
+        auc_cut = 0.85
+
+        if ((sensitivity > sensitivity_cut) and (specificity > specificity_cut) and (auc > auc_cut)):
+            m_test_pred = RF_model.predict(test_X)
+            m_auc = metrics.roc_auc_score(test_y, m_test_pred)
+            tn, fp, fn, tp = confusion_matrix(test_y, m_test_pred).ravel()
+            m_specificity = tn / (tn + fp)
+            m_sensitivity = tp / (tp + fn)
+            if ((m_sensitivity > sensitivity_cut) and (m_specificity > specificity_cut) and (m_auc > auc_cut)):
+                id = str(uuid.uuid1())
+                with open("model_" + id + ".pkl", 'wb') as mf:
+                    pickle.dump(RF_model, mf)
+                with open("scale_" + id + ".pkl", 'wb') as sf:
+                    pickle.dump(scaler, sf)
+                writeline = id + "," + str(sensitivity) + "," + str(m_sensitivity) + "," + str(specificity) + "," + str(m_specificity) + ","  + str(auc) + ","  + str(m_auc) + "\n"
+                f.write(writeline)
+                print("All: " + str(sensitivity) + "," + str(specificity) + "," + str(auc))
+                print("Model: " + str(m_sensitivity) + "," + str(m_specificity) + "," + str(m_auc))
+                print("\n")
+
+    f.close()
+    #print(sorted(auc_list, reverse=True))
+    #return np.mean(acc_list), np.mean(kappa_list), np.mean(ap_list), np.mean(auc_list), np.mean(specificity_list), np.mean(sensitivity_list)
 
 def getrandomforeststats_fold(file_path, kfolds):
     # Read in data and display first 5 rows

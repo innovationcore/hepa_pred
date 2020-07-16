@@ -1,5 +1,5 @@
 from models import getrandomforest, getnn, getrandomforestave, getrandomforeststats_all, getrandomforeststats_3, \
-    getnnstats, getrandomforeststats_fold
+    getnnstats, getrandomforeststats_fold, getrandomforeststats_fold_cv, getsample
 
 file_path = "hepaa.csv"
 loopcount = 1000
@@ -12,13 +12,16 @@ print("RF MAX: "  + str(max))
 print("RF MIN: "  + str(min))
 '''
 
+getsample(file_path)
+
 #acc, kappa, ap, auc, specificity, sensitivity = getrandomforeststats_all(file_path, loopcount)
 
 #acc, kappa, ap, auc, specificity, sensitivity = getrandomforeststats_3(file_path, loopcount)
 #print("acc: " + str(acc) + " ap: " + str(ap) + " auc:" + str(auc) + " kappa: " + str(kappa) + " specificity: " + str(specificity) + " sensitivity: " + str(sensitivity))
 
-acc, kappa, ap, auc, specificity, sensitivity = getrandomforeststats_fold(file_path, 5)
-print("acc: " + str(acc) + " ap: " + str(ap) + " auc:" + str(auc) + " kappa: " + str(kappa) + " specificity: " + str(specificity) + " sensitivity: " + str(sensitivity))
+#used for model
+#acc, kappa, ap, auc, specificity, sensitivity = getrandomforeststats_fold_cv(file_path, 5)
+#print("acc: " + str(acc) + " ap: " + str(ap) + " auc:" + str(auc) + " kappa: " + str(kappa) + " specificity: " + str(specificity) + " sensitivity: " + str(sensitivity))
 
 #acc, kappa, ap, auc, specificity, sensitivity = getnnstats(file_path, 5)
 #print("acc: " + str(acc) + " ap: " + str(ap) + " auc:" + str(auc) + " kappa: " + str(kappa) + " specificity: " + str(specificity) + " sensitivity: " + str(sensitivity))
