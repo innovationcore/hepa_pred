@@ -28,7 +28,10 @@
         for (var i = 0, ii = form.length; i < ii; ++i) {
             var input = form[i];
             if (input.name) {
-                data.push(parseFloat(input.value));
+                if (input.value)
+                    data.push(parseFloat(input.value));
+                else
+                    data.push(0)
             }
         }
         to_predict.push(data);
