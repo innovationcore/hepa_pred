@@ -22,7 +22,7 @@ print("RF MIN: "  + str(min))
 #print("acc: " + str(acc) + " ap: " + str(ap) + " auc:" + str(auc) + " kappa: " + str(kappa) + " specificity: " + str(specificity) + " sensitivity: " + str(sensitivity))
 
 #used for model
-getrandomforeststats_fold_cv(file_path, 500)
+getrandomforeststats_fold_cv(file_path, 15000)
 #acc, kappa, ap, auc, specificity, sensitivity = getrandomforeststats_fold_cv(file_path, 5)
 #print("acc: " + str(acc) + " ap: " + str(ap) + " auc:" + str(auc) + " kappa: " + str(kappa) + " specificity: " + str(specificity) + " sensitivity: " + str(sensitivity))
 

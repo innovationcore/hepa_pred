@@ -21,6 +21,35 @@ from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.tree import export_graphviz
 
+def do_cross_validate(X,y,model,repeats):
+
+    cv_sensitivity_list = []
+    cv_specificity_list = []
+    cv_auc_list = []
+    cv_acc_list = []
+
+    for x in range(repeats):
+
+        scores = cross_validate(model, X, y, scoring=('precision', 'recall', 'roc_auc', 'accuracy'))
+
+        cv_sensitivity_list.append(np.mean(scores['test_recall']))
+        cv_specificity_list.append(np.mean(scores['test_precision']))
+        cv_auc_list.append(np.mean(scores['test_roc_auc']))
+        cv_acc_list.append(np.mean(scores['test_accuracy']))
+
+        #cv_sensitivity = np.mean(scores['test_recall'])
+        #cv_specificity = np.mean(scores['test_precision'])
+        #cv_auc = np.mean(scores['test_roc_auc'])
+        #cv_acc = np.mean(scores['test_accuracy'])
+
+    cv_sensitivity = np.mean(cv_sensitivity_list)
+    cv_specificity = np.mean(cv_specificity_list)
+    cv_auc = np.mean(cv_auc_list)
+    cv_acc = np.mean(cv_acc_list)
+
+    return cv_sensitivity, cv_specificity_list, cv_auc, cv_acc
+
+
 def getsample(file_path):
 
     dataset = pd.read_csv(file_path)
@@ -75,7 +104,6 @@ y.Adm.ALT
             f += 1
 
     print("t=" + str(t) + " " + " f=" + str(f))
-
 
 def testmodel(file_path):
 
@@ -299,8 +327,8 @@ y.Adm.ALT
 
 
     #'x.Cirrhosis_N', 'x.Cirrhosis_Y', 'y.Adm.Na', 'y.Adm.ALT', 'y.Adm.ALP', 'y.Adm.Alb',
-    for term in drop_list:
-        X = X.drop([term], axis=1)
+    #for term in drop_list:
+    #    X = X.drop([term], axis=1)
 
 
     pd.set_option('display.max_columns', None)
@@ -345,23 +373,27 @@ y.Adm.ALT
 
         '''
         parameters = {'bootstrap': True,
-                      'min_samples_leaf': 3,
-                      'n_estimators': 25,
-                      'min_samples_split': 10,
+                      'min_samples_leaf': 1,
+                      'n_estimators': 10,
+                      'min_samples_split': 2,
                       'max_features': 'sqrt',
-                      'max_depth': 10,
+                      'max_depth': 20,
                       'max_leaf_nodes': None}
 
 
         RF_model = RandomForestClassifier(**parameters)
         RF_model.fit(train_X, train_y)
 
+        '''
         scores = cross_validate(RF_model, Xs, y, scoring=('precision', 'recall', 'roc_auc', 'accuracy'))
 
         cv_sensitivity = np.mean(scores['test_recall'])
         cv_specificity = np.mean(scores['test_precision'])
         cv_auc = np.mean(scores['test_roc_auc'])
         cv_acc = np.mean(scores['test_accuracy'])
+        '''
+
+        cv_sensitivity,cv_specificity,cv_auc,cv_acc =  do_cross_validate(Xs, ys, RF_model, 10)
 
         sensitivity_cut = 0.78
         specificity_cut = 0.85
@@ -373,10 +405,10 @@ y.Adm.ALT
                 high_s = cv_sensitivity
 
                 id = str(uuid.uuid1())
-                with open("model_" + id + ".pkl", 'wb') as mf:
-                    pickle.dump(RF_model, mf)
-                with open("scale_" + id + ".pkl", 'wb') as sf:
-                    pickle.dump(scaler, sf)
+                #with open("model_" + id + ".pkl", 'wb') as mf:
+                #    pickle.dump(RF_model, mf)
+                #with open("scale_" + id + ".pkl", 'wb') as sf:
+                #    pickle.dump(scaler, sf)
                 #writeline = id + "," + str(sensitivity) + "," + str(m_sensitivity) + "," + str(specificity) + "," + str(m_specificity) + ","  + str(auc) + ","  + str(m_auc) + "\n"
                 #f.write(writeline)
 
