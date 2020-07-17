@@ -219,3 +219,14 @@ class HepADataset():
         to_remove = list(set(complete) - set(self.columns))
         x_df = x_df.drop(columns=to_remove)
         return x_df.values.tolist(), y
+
+    def get_full_data(self):
+        to_return = []
+        for entry in self.data:
+            if not entry.has_blanks():
+                to_return.append(entry)
+        x = pd.DataFrame([x.get_x() for x in to_return])
+        complete = [i for i in range(19)]
+        to_remove = list(set(complete) - set(self.columns))
+        x = x.drop(columns=to_remove)
+        return x.values.tolist(), [y.get_y() for y in to_return]
