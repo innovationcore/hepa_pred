@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Flatten
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from keras.callbacks import ModelCheckpoint
@@ -184,7 +184,7 @@ def evaluate(model, test_features, test_labels):
 
     return accuracy
 
-def randomforesttuning(file_path):
+def randomforesttuning(file_path,loops):
     # Number of trees in random forest
     n_estimators = [int(x) for x in np.linspace(start=10, stop=2000, num=10)]
     # Number of features to consider at every split
@@ -205,7 +205,7 @@ def randomforesttuning(file_path):
                    'min_samples_split': min_samples_split,
                    'min_samples_leaf': min_samples_leaf,
                    'bootstrap': bootstrap}
-    pprint(random_grid)
+    print(random_grid)
 
 
     # Read in data and display first 5 rows
@@ -240,39 +240,27 @@ def randomforesttuning(file_path):
     # Xs = scaler.fit_transform(X)
     # ys = y
 
-    # write reults file
-    f = open("models.csv", "w")
-    f.write("model_id,sensitivity_all,sensitivity_model,specificity_all,specificity_model,auc_all,auc_model\n")
+    train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.3)
+    scaler.fit(train_X)
+    train_X = scaler.transform(train_X)
+    test_X = scaler.transform(test_X)
 
-    # kf = KFold(n_splits=kfolds)
-    # kf = RepeatedKFold(n_splits=kfolds, n_repeats=5000)
-    # kf.get_n_splits(X)
+    Xs = scaler.transform(X)
+    ys = y
 
-    high_s = 0
+    # Use the random grid to search for best hyperparameters
+    # First create the base model to tune
+    rf = RandomForestRegressor()
+    # Random search of parameters, using 3 fold cross validation,
+    # search across 100 different combinations, and use all available cores
+    rf_random = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=100, cv=5, verbose=2,
+                                   random_state=42, n_jobs=-1)
 
-    for x in range(loops):
-        train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.3)
-        scaler.fit(train_X)
-        train_X = scaler.transform(train_X)
-        test_X = scaler.transform(test_X)
+    # Fit the random search model
+    rf_random.fit(train_X, train_y)
 
-        Xs = scaler.transform(X)
-        ys = y
-
-        # Use the random grid to search for best hyperparameters
-        # First create the base model to tune
-        rf = RandomForestRegressor()
-        # Random search of parameters, using 3 fold cross validation,
-        # search across 100 different combinations, and use all available cores
-        rf_random = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=100, cv=5, verbose=2,
-                                       random_state=42, n_jobs=-1)
-
-        # Fit the random search model
-        rf_random.fit(train_X, train_y)
-
-        best_random = rf_random.best_estimator_
-        random_accuracy = evaluate(best_random, test_features, test_labels)
-
+    best_random = rf_random.best_estimator_
+    random_accuracy = evaluate(best_random, test_X, test_y)
 
 
 def getmodelstats(model, X, y):
