@@ -20,6 +20,7 @@ from keras.callbacks import ModelCheckpoint
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.tree import export_graphviz
+from sklearn.model_selection import RandomizedSearchCV
 
 def do_cross_validate(X,y,model,folds,repeats):
 
@@ -48,7 +49,6 @@ def do_cross_validate(X,y,model,folds,repeats):
     cv_acc = np.mean(cv_acc_list)
 
     return cv_sensitivity, cv_specificity, cv_auc, cv_acc
-
 
 def getsample(file_path):
 
@@ -171,6 +171,108 @@ y.Adm.ALT
     print("--")
     print("cv_accuracy: " + str(cv_acc))
     print("t_accuracy: " + str(t_acc))
+
+
+def evaluate(model, test_features, test_labels):
+    predictions = model.predict(test_features)
+    errors = abs(predictions - test_labels)
+    mape = 100 * np.mean(errors / test_labels)
+    accuracy = 100 - mape
+    print('Model Performance')
+    print('Average Error: {:0.4f} degrees.'.format(np.mean(errors)))
+    print('Accuracy = {:0.2f}%.'.format(accuracy))
+
+    return accuracy
+
+def randomforesttuning(file_path):
+    # Number of trees in random forest
+    n_estimators = [int(x) for x in np.linspace(start=10, stop=2000, num=10)]
+    # Number of features to consider at every split
+    max_features = ['auto', 'sqrt']
+    # Maximum number of levels in tree
+    max_depth = [int(x) for x in np.linspace(10, 110, num=11)]
+    max_depth.append(None)
+    # Minimum number of samples required to split a node
+    min_samples_split = [2, 5, 10]
+    # Minimum number of samples required at each leaf node
+    min_samples_leaf = [1, 2, 4]
+    # Method of selecting samples for training each tree
+    bootstrap = [True, False]
+    # Create the random grid
+    random_grid = {'n_estimators': n_estimators,
+                   'max_features': max_features,
+                   'max_depth': max_depth,
+                   'min_samples_split': min_samples_split,
+                   'min_samples_leaf': min_samples_leaf,
+                   'bootstrap': bootstrap}
+    pprint(random_grid)
+
+
+    # Read in data and display first 5 rows
+    dataset = pd.read_csv(file_path)
+
+    # dataset = dataset.fillna(dataset.mean())
+    dataset = dataset.fillna(dataset.mode().iloc[0])
+    # print(dataset.columns[dataset.isna().any()].tolist())
+
+    # One-hot encode the data using pandas get_dummies
+    dataset = pd.get_dummies(dataset)
+    # Display the first 5 rows of the last 12 columns
+
+    y = dataset['z.bad_Y']
+    X = dataset.drop(['z.bad_Y'], axis=1)
+    X = X.drop(['z.bad_N'], axis=1)
+
+    drop_list = ['x.HEP.C.RNA_N', 'x.GEND_F', 'x.GEND_M', 'x.HEP.C.RNA_P', 'x.Hep.B_N', 'x.Hep.B_P',
+                 'y.Adm.Platelet', 'y.Adm.Alb', 'x.alcohol.use_HEAV<6M', 'x.alcohol.use_HEAV>6M', 'y.Adm.AST',
+                 'y.Adm.ALP', 'x.alcohol.use_MOD', 'x.alcohol.use_SOC', 'y.AGE', 'y.BMI', 'y.Adm.Bili',
+                 'x.DM_Y', 'x.HTN_N', 'x.HTN_Y', 'y.Adm.Na',
+                 'x.Cirrhosis_N', 'x.DM_N']
+
+    for term in drop_list:
+        X = X.drop([term], axis=1)
+
+
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    # X = scaler.fit_transform(X)
+
+    # for final testing
+    # Xs = scaler.fit_transform(X)
+    # ys = y
+
+    # write reults file
+    f = open("models.csv", "w")
+    f.write("model_id,sensitivity_all,sensitivity_model,specificity_all,specificity_model,auc_all,auc_model\n")
+
+    # kf = KFold(n_splits=kfolds)
+    # kf = RepeatedKFold(n_splits=kfolds, n_repeats=5000)
+    # kf.get_n_splits(X)
+
+    high_s = 0
+
+    for x in range(loops):
+        train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.3)
+        scaler.fit(train_X)
+        train_X = scaler.transform(train_X)
+        test_X = scaler.transform(test_X)
+
+        Xs = scaler.transform(X)
+        ys = y
+
+        # Use the random grid to search for best hyperparameters
+        # First create the base model to tune
+        rf = RandomForestRegressor()
+        # Random search of parameters, using 3 fold cross validation,
+        # search across 100 different combinations, and use all available cores
+        rf_random = RandomizedSearchCV(estimator=rf, param_distributions=random_grid, n_iter=100, cv=5, verbose=2,
+                                       random_state=42, n_jobs=-1)
+
+        # Fit the random search model
+        rf_random.fit(train_X, train_y)
+
+        best_random = rf_random.best_estimator_
+        random_accuracy = evaluate(best_random, test_features, test_labels)
+
 
 
 def getmodelstats(model, X, y):
