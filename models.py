@@ -21,7 +21,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.tree import export_graphviz
 
-def do_cross_validate(X,y,model,repeats):
+def do_cross_validate(X,y,model,folds,repeats):
 
     cv_sensitivity_list = []
     cv_specificity_list = []
@@ -30,7 +30,7 @@ def do_cross_validate(X,y,model,repeats):
 
     for x in range(repeats):
 
-        scores = cross_validate(model, X, y, scoring=('precision', 'recall', 'roc_auc', 'accuracy'))
+        scores = cross_validate(model, X, y, cv=folds, scoring=('precision', 'recall', 'roc_auc', 'accuracy'))
 
         cv_sensitivity_list.append(np.mean(scores['test_recall']))
         cv_specificity_list.append(np.mean(scores['test_precision']))
@@ -149,19 +149,14 @@ y.Adm.ALT
 
     pd.set_option('display.max_columns', None)
 
-    RF_model = pickle.load(open('model.pkl', 'rb'))
-    scaler = pickle.load(open('scaler.pkl', 'rb'))
+    RF_model = pickle.load(open('model_c93fb71e-c871-11ea-8160-989e63438cda.pkl', 'rb'))
+    scaler = pickle.load(open('scale_c93fb71e-c871-11ea-8160-989e63438cda.pkl', 'rb'))
 
     #for final testing
     Xs = scaler.fit_transform(X)
     ys = y
 
-    scores = cross_validate(RF_model, Xs, ys, scoring=('precision', 'recall', 'roc_auc', 'accuracy'))
-
-    cv_sensitivity = np.mean(scores['test_recall'])
-    cv_specificity = np.mean(scores['test_precision'])
-    cv_auc = np.mean(scores['test_roc_auc'])
-    cv_acc = np.mean(scores['test_accuracy'])
+    cv_sensitivity, cv_specificity, cv_auc, cv_acc = do_cross_validate(Xs, ys, RF_model, 5, 10)
 
     t_sensitivity, t_specificity, t_auc, t_acc, t_ap, t_kappa = getmodelstats(RF_model, Xs, ys)
 
@@ -355,7 +350,7 @@ y.Adm.ALT
 
     for x in range(loops):
 
-        train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.2)
+        train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.3)
         scaler.fit(train_X)
         train_X = scaler.transform(train_X)
         test_X = scaler.transform(test_X)
@@ -394,9 +389,9 @@ y.Adm.ALT
         cv_acc = np.mean(scores['test_accuracy'])
         '''
 
-        cv_sensitivity,cv_specificity,cv_auc,cv_acc =  do_cross_validate(Xs, ys, RF_model, 5)
+        cv_sensitivity,cv_specificity,cv_auc,cv_acc =  do_cross_validate(Xs, ys, RF_model, 10, 10)
 
-        sensitivity_cut = 0.75
+        sensitivity_cut = 0.77
         specificity_cut = 0.8
         auc_cut = 0.8
 
