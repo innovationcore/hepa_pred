@@ -47,7 +47,7 @@ def do_cross_validate(X,y,model,repeats):
     cv_auc = np.mean(cv_auc_list)
     cv_acc = np.mean(cv_acc_list)
 
-    return cv_sensitivity, cv_specificity_list, cv_auc, cv_acc
+    return cv_sensitivity, cv_specificity, cv_auc, cv_acc
 
 
 def getsample(file_path):
@@ -317,6 +317,7 @@ y.Adm.WBC
 y.Adm.ALT
     '''
 
+
     # drop_list = ['x.HEP.C.RNA_N','y.Adm.WBC','x.GEND_F','x.GEND_M','x.HEP.C.RNA_P','x.Hep.B_N','x.Hep.B_P','y.Adm.Platelet','y.Adm.Alb','x.alcohol.use_HEAV<6M','x.alcohol.use_HEAV>6M','y.Adm.AST','y.Adm.ALP','x.alcohol.use_MOD','x.alcohol.use_SOC','y.AGE','y.BMI','y.Adm.Bili','y.Admission.INR','x.DM_Y','x.HTN_N','x.HTN_Y','y.Adm.Cr','y.Adm.Na','y.Adm.ALT','x.Cirrhosis_N','x.Cirrhosis_Y','x.DM_N']
 
     drop_list = ['x.HEP.C.RNA_N', 'x.GEND_F', 'x.GEND_M', 'x.HEP.C.RNA_P', 'x.Hep.B_N', 'x.Hep.B_P',
@@ -327,8 +328,8 @@ y.Adm.ALT
 
 
     #'x.Cirrhosis_N', 'x.Cirrhosis_Y', 'y.Adm.Na', 'y.Adm.ALT', 'y.Adm.ALP', 'y.Adm.Alb',
-    #for term in drop_list:
-    #    X = X.drop([term], axis=1)
+    for term in drop_list:
+        X = X.drop([term], axis=1)
 
 
     pd.set_option('display.max_columns', None)
@@ -374,8 +375,8 @@ y.Adm.ALT
         '''
         parameters = {'bootstrap': True,
                       'min_samples_leaf': 1,
-                      'n_estimators': 10,
-                      'min_samples_split': 2,
+                      'n_estimators': 15,
+                      'min_samples_split': 5,
                       'max_features': 'sqrt',
                       'max_depth': 20,
                       'max_leaf_nodes': None}
@@ -393,11 +394,11 @@ y.Adm.ALT
         cv_acc = np.mean(scores['test_accuracy'])
         '''
 
-        cv_sensitivity,cv_specificity,cv_auc,cv_acc =  do_cross_validate(Xs, ys, RF_model, 10)
+        cv_sensitivity,cv_specificity,cv_auc,cv_acc =  do_cross_validate(Xs, ys, RF_model, 5)
 
-        sensitivity_cut = 0.78
-        specificity_cut = 0.85
-        auc_cut = 0.85
+        sensitivity_cut = 0.75
+        specificity_cut = 0.8
+        auc_cut = 0.8
 
         if ((cv_sensitivity > sensitivity_cut) and (cv_specificity > specificity_cut) and (cv_auc > auc_cut)):
 
@@ -405,10 +406,10 @@ y.Adm.ALT
                 high_s = cv_sensitivity
 
                 id = str(uuid.uuid1())
-                #with open("model_" + id + ".pkl", 'wb') as mf:
-                #    pickle.dump(RF_model, mf)
-                #with open("scale_" + id + ".pkl", 'wb') as sf:
-                #    pickle.dump(scaler, sf)
+                with open("model_" + id + ".pkl", 'wb') as mf:
+                    pickle.dump(RF_model, mf)
+                with open("scale_" + id + ".pkl", 'wb') as sf:
+                    pickle.dump(scaler, sf)
                 #writeline = id + "," + str(sensitivity) + "," + str(m_sensitivity) + "," + str(specificity) + "," + str(m_specificity) + ","  + str(auc) + ","  + str(m_auc) + "\n"
                 #f.write(writeline)
 
