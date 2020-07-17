@@ -2,28 +2,85 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Test</title>
+    <title>Hepatitis A Web-Based Predictor</title>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 </head>
 <body>
-<form id='predict-form' action="/predict" method="post">
-    INR: <input type="text" name="c" value="1" /><br>
-    Cr: <input type="text" name="e" value="1" /><br>
-    ALT: <input type="text" name="d" value="1" /><br>
-    WBC: <input type="text" name="b" value="1" /><br>
-    Cirrhosis: <select name="a"><option value="1">Yes</option><option value="0">No</option></select><br>
-    <input type="submit" />
-</form><br>
-<div id='predict-results'>
-
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 mb-3">
+            <div class="card text-center">
+                <div class="card-header">
+                    <h3>Hepatitis A Web-Based Predictor</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-lg-4 mb-3">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h5 class="mb-0">Patient Stats</h5>
+                </div>
+                <div class="card-body">
+                    <form id='predict-form' action="/predict" method="post">
+                        <div class="form-group">
+                            <label for="inr-input">International Normalized Ratio</label>
+                            <input class="form-control" type="text" id="inr-input" name="inr" value="0" />
+                        </div>
+                        <div class="form-group">
+                            <label for="cr-input">Creatinine</label>
+                            <input class="form-control" type="text" id="cr-input" name="cr" value="0" />
+                        </div>
+                        <div class="form-group">
+                            <label for="alt-input">Alanine Aminotransferase</label>
+                            <input class="form-control" type="text" id="alt-input" name="alt" value="0" />
+                        </div>
+                        <div class="form-group">
+                            <label for="wbc-input">White Blood Cell Count</label>
+                            <input class="form-control" type="text" id="wbc-input" name="wbc" value="0" />
+                        </div>
+                        <div class="form-group">
+                            <label for="cir-input">Cirrhosis</label>
+                            <select class="form-control" id="cir-input" name="a">
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                        <input class="form-control btn btn-secondary" type="submit" />
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2">
+            <div class="card text-center">
+                <div class="card-header">
+                    <h5 class="mb-0">Results</h5>
+                </div>
+                <div class="card-body" id='predict-results'>
+                    &nbsp;
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <script type="text/javascript">
     var form = document.getElementById('predict-form');
     var results_div = document.getElementById('predict-results');
 
+    var white = "rgba(255, 255, 255, 1.0)";
+    var lightGreen = "rgba(0, 255, 0, 0.3)";
+    var lightRed = "rgba(255, 0, 0, 0.3)";
+    var darkRed = "rgba(255, 0, 0, 0.6)"
+
     form.onsubmit = function (e) {
         // stop the regular form submission
         e.preventDefault();
 
+        display_results("Querying prediction server", white);
         // collect the form data while iterating over the inputs
         var to_predict = []
         var data = [];
@@ -47,14 +104,32 @@
         xhr.send(JSON.stringify(to_predict));
 
         xhr.onloadend = function () {
-            var results = JSON.parse(xhr.response);
-            if (results.success) {
-                results_div.innerText = "Predicted: " + (results.results[0] === 0 ? "No" : "Yes")
-            } else {
-                results_div.innerText = "Failed! (Error: " + results.error + ")"
+            if (xhr.status === 200) {
+                var results = JSON.parse(xhr.response);
+                if (results.success) {
+                    var patient_result = (results.results[0] === 0)
+                    if (patient_result) {
+                        display_results("Predicted: Negative", lightGreen)
+                    } else {
+                        display_results("Predicted: Positive", lightRed);
+                    }
+                } else {
+                    display_results("Failed! (Error: " + results.error + ")", darkRed);
+                }
+            } else if (xhr.status === 404) {
+                display_results("Could not connect to prediction server!", darkRed);
             }
         };
+
+        xhr.onerror = function(e) {
+            display_results("Error with web request, please try again!", darkRed);
+        }
     };
+
+    function display_results(text, color) {
+        results_div.innerText = text;
+        results_div.style.backgroundColor = color;
+    }
 </script>
 </body>
 </html>
