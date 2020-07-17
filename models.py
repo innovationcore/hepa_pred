@@ -66,7 +66,88 @@ y.Adm.ALT
     pd.set_option('display.max_columns', None)
 
     print(dataset)
+    t = 0
+    f = 0
+    for yy in y:
+        if yy == 1:
+            t += 1
+        else:
+            f += 1
 
+    print("t=" + str(t) + " " + " f=" + str(f))
+
+
+def testmodel(file_path):
+
+    dataset = pd.read_csv(file_path)
+
+    # dataset = dataset.fillna(dataset.mean())
+    dataset = dataset.fillna(dataset.mode().iloc[0])
+    # print(dataset.columns[dataset.isna().any()].tolist())
+
+    # print("pre NA drop: " + str(dataset.shape))
+    # dataset = dataset.dropna()
+    # print("post NA drop: " + str(dataset.shape))
+
+    # dataset['y.Adm.Cr'] = np.log(dataset['y.Adm.Cr'])
+    # dataset['y.Admission.INR'] = np.log(dataset['y.Admission.INR'])
+
+    # One-hot encode the data using pandas get_dummies
+    dataset = pd.get_dummies(dataset)
+    # Display the first 5 rows of the last 12 columns
+
+    '''
+y.Admission.INR
+y.Adm.Cr
+x.Cirrhosis
+y.Adm.WBC
+y.Adm.ALT
+    '''
+
+    y = dataset['z.bad_Y']
+    X = dataset.drop(['z.bad_Y'], axis=1)
+    #X = X.drop(['z.bad_N'], axis=1)
+    # X = X.drop(['y.BMI'], axis=1)
+
+    drop_list = ['x.HEP.C.RNA_N', 'x.GEND_F', 'x.GEND_M', 'x.HEP.C.RNA_P', 'x.Hep.B_N', 'x.Hep.B_P',
+                 'y.Adm.Platelet', 'y.Adm.Alb', 'x.alcohol.use_HEAV<6M', 'x.alcohol.use_HEAV>6M', 'y.Adm.AST',
+                 'y.Adm.ALP', 'x.alcohol.use_MOD', 'x.alcohol.use_SOC', 'y.AGE', 'y.BMI', 'y.Adm.Bili',
+                 'x.DM_Y', 'x.HTN_N', 'x.HTN_Y', 'y.Adm.Na',
+                 'x.Cirrhosis_N', 'x.DM_N', 'z.bad_N']
+
+    # 'x.Cirrhosis_N', 'x.Cirrhosis_Y', 'y.Adm.Na', 'y.Adm.ALT', 'y.Adm.ALP', 'y.Adm.Alb',
+    for term in drop_list:
+        X = X.drop([term], axis=1)
+
+    pd.set_option('display.max_columns', None)
+
+    RF_model = pickle.load(open('model.pkl', 'rb'))
+    scaler = pickle.load(open('scaler.pkl', 'rb'))
+
+    #for final testing
+    Xs = scaler.fit_transform(X)
+    ys = y
+
+    scores = cross_validate(RF_model, Xs, ys, scoring=('precision', 'recall', 'roc_auc', 'accuracy'))
+
+    cv_sensitivity = np.mean(scores['test_recall'])
+    cv_specificity = np.mean(scores['test_precision'])
+    cv_auc = np.mean(scores['test_roc_auc'])
+    cv_acc = np.mean(scores['test_accuracy'])
+
+    t_sensitivity, t_specificity, t_auc, t_acc, t_ap, t_kappa = getmodelstats(RF_model, Xs, ys)
+
+    print("cv_sensitivity: " + str(cv_sensitivity))
+    print("t_sensitivity: " + str(t_sensitivity))
+    print("--")
+    print("cv_specificity: " + str(cv_specificity))
+    print("t_specificity: " + str(t_specificity))
+    print("--")
+    print("cv_auc: " + str(cv_auc))
+    print("t_auc: " + str(t_auc))
+    print("--")
+    print("cv_accuracy: " + str(cv_acc))
+    print("t_accuracy: " + str(t_acc))
 
 
 def getmodelstats(model, X, y):
@@ -176,7 +257,7 @@ def getrandomforest(file_path):
 
     return acc, ap, auc, kappa
 
-def getrandomforeststats_fold_cv(file_path, kfolds):
+def getrandomforeststats_fold_cv(file_path, loops):
     # Read in data and display first 5 rows
     dataset = pd.read_csv(file_path)
 
@@ -230,29 +311,30 @@ y.Adm.ALT
     #X = scaler.fit_transform(X)
 
     #for final testing
-    Xs = scaler.fit_transform(X)
-    ys = y
+    #Xs = scaler.fit_transform(X)
+    #ys = y
 
     #write reults file
     f = open("models.csv", "w")
     f.write("model_id,sensitivity_all,sensitivity_model,specificity_all,specificity_model,auc_all,auc_model\n")
 
     #kf = KFold(n_splits=kfolds)
-    kf = RepeatedKFold(n_splits=kfolds, n_repeats=1000)
-    kf.get_n_splits(X)
+    #kf = RepeatedKFold(n_splits=kfolds, n_repeats=5000)
+    #kf.get_n_splits(X)
 
-    for train_index, test_index in kf.split(X):
-        #print("TRAIN:", train_index, "TEST:", test_index)
-        train_X, test_X = X.iloc[train_index], X.iloc[test_index]
+    high_s = 0
+
+    for x in range(loops):
+
+        train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.2)
         scaler.fit(train_X)
         train_X = scaler.transform(train_X)
         test_X = scaler.transform(test_X)
 
-        #train_X = scaler.fit_transform(train_X)
-        #test_X = scaler.fit_transform(test_X)
+        Xs = scaler.transform(X)
+        ys = y
 
-        train_y, test_y = y.iloc[train_index], y.iloc[test_index]
-
+        '''
         parameters = {'bootstrap': True,
                       'min_samples_leaf': 3,
                       'n_estimators': 50,
@@ -261,18 +343,92 @@ y.Adm.ALT
                       'max_depth': 6,
                       'max_leaf_nodes': None}
 
+        '''
+        parameters = {'bootstrap': True,
+                      'min_samples_leaf': 3,
+                      'n_estimators': 25,
+                      'min_samples_split': 10,
+                      'max_features': 'sqrt',
+                      'max_depth': 10,
+                      'max_leaf_nodes': None}
+
+
         RF_model = RandomForestClassifier(**parameters)
         RF_model.fit(train_X, train_y)
 
-        sensitivity, specificity, auc, acc, ap, kappa = getmodelstats(RF_model,Xs,ys)
+        scores = cross_validate(RF_model, Xs, y, scoring=('precision', 'recall', 'roc_auc', 'accuracy'))
 
-        sensitivity_cut = 0.86
+        cv_sensitivity = np.mean(scores['test_recall'])
+        cv_specificity = np.mean(scores['test_precision'])
+        cv_auc = np.mean(scores['test_roc_auc'])
+        cv_acc = np.mean(scores['test_accuracy'])
+
+        sensitivity_cut = 0.78
         specificity_cut = 0.85
         auc_cut = 0.85
 
-        if ((sensitivity > sensitivity_cut) and (specificity > specificity_cut) and (auc > auc_cut)):
+        if ((cv_sensitivity > sensitivity_cut) and (cv_specificity > specificity_cut) and (cv_auc > auc_cut)):
+
+            if high_s < cv_sensitivity:
+                high_s = cv_sensitivity
+
+                id = str(uuid.uuid1())
+                with open("model_" + id + ".pkl", 'wb') as mf:
+                    pickle.dump(RF_model, mf)
+                with open("scale_" + id + ".pkl", 'wb') as sf:
+                    pickle.dump(scaler, sf)
+                #writeline = id + "," + str(sensitivity) + "," + str(m_sensitivity) + "," + str(specificity) + "," + str(m_specificity) + ","  + str(auc) + ","  + str(m_auc) + "\n"
+                #f.write(writeline)
+
+                t_sensitivity, t_specificity, t_auc, t_acc, t_ap, t_kappa = getmodelstats(RF_model, Xs, ys)
+                m_sensitivity, m_specificity, m_auc, m_acc, m_ap, m_kappa = getmodelstats(RF_model, test_X, test_y)
+
+                print("")
+                print("id: " + id)
+                print("cv_sensitivity: " + str(cv_sensitivity))
+                print("t_sensitivity: " + str(t_sensitivity))
+                print("m_sensitivity: " + str(m_sensitivity))
+                print("--")
+                print("cv_specificity: " + str(cv_specificity))
+                print("t_specificity: " + str(t_specificity))
+                print("m_specificity: " + str(m_specificity))
+                print("--")
+                print("cv_auc: " + str(cv_auc))
+                print("t_auc: " + str(t_auc))
+                print("m_auc: " + str(m_auc))
+                print("--")
+                print("cv_accuracy: " + str(cv_acc))
+                print("t_accuracy: " + str(t_acc))
+                print("m_accuracy: " + str(m_acc))
+
+            '''
+                for train_index, test_index in kf.split(X):
+                
+                    train_X, test_X = X.iloc[train_index], X.iloc[test_index]
+                    scaler.fit(train_X)
+                    train_X = scaler.transform(train_X)
+                    test_X = scaler.transform(test_X)
+
+                    train_y, test_y = y.iloc[train_index], y.iloc[test_index]
+
+
+                    parameters = {'bootstrap': True,
+                                  'min_samples_leaf': 3,
+                                  'n_estimators': 50,
+                                  'min_samples_split': 10,
+                                  'max_features': 'sqrt',
+                                  'max_depth': 6,
+                                  'max_leaf_nodes': None}
+                    '''
+
+            '''
             m_test_pred = RF_model.predict(test_X)
+
+            m_acc = metrics.accuracy_score(test_y, m_test_pred)
+            m_kappa = metrics.cohen_kappa_score(test_y, m_test_pred)
+            m_ap = metrics.average_precision_score(test_y, m_test_pred)
             m_auc = metrics.roc_auc_score(test_y, m_test_pred)
+
             tn, fp, fn, tp = confusion_matrix(test_y, m_test_pred).ravel()
             m_specificity = tn / (tn + fp)
             m_sensitivity = tp / (tp + fn)
@@ -286,7 +442,20 @@ y.Adm.ALT
                 f.write(writeline)
                 print("All: " + str(sensitivity) + "," + str(specificity) + "," + str(auc))
                 print("Model: " + str(m_sensitivity) + "," + str(m_specificity) + "," + str(m_auc))
+                print("m_acc: " + str(m_acc) + " m_kappa: " + str(m_kappa) + " m_ap: " + str(m_ap))
+                #print("acc: " + str(acc) + " kappa: " + str(kappa) + " ap: " + str(ap))
+                print("acc: " + str(acc))
                 print("\n")
+                scores = cross_validate(RF_model, X, y, scoring = ('precision', 'recall','roc_auc','accuracy'))
+                print(scores)
+                #print(np.mean(scores['test_fit']))
+                print("cv_precision: " + str(np.mean(scores['test_precision'])))
+                print("cv_recall: " + str(np.mean(scores['test_recall'])))
+                print("cv_auc: " + str(np.mean(scores['test_roc_auc'])))
+                print("cv_accuract: " + str(np.mean(scores['test_accuracy'])))
+                # %%
+                print(classification_report(test_y, m_test_pred, target_names=['Yes', 'No']))
+                '''
 
     f.close()
     #print(sorted(auc_list, reverse=True))
