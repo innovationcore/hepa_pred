@@ -260,7 +260,29 @@ def randomforesttuning(file_path,loops):
     rf_random.fit(train_X, train_y)
 
     best_random = rf_random.best_estimator_
-    random_accuracy = evaluate(best_random, test_X, test_y)
+
+    cv_sensitivity, cv_specificity, cv_auc, cv_acc = do_cross_validate(Xs, ys, best_random, 10, 10)
+
+    t_sensitivity, t_specificity, t_auc, t_acc, t_ap, t_kappa = getmodelstats(RF_model, Xs, ys)
+    m_sensitivity, m_specificity, m_auc, m_acc, m_ap, m_kappa = getmodelstats(RF_model, test_X, test_y)
+
+    print("")
+    print("id: " + id)
+    print("cv_sensitivity: " + str(cv_sensitivity))
+    print("t_sensitivity: " + str(t_sensitivity))
+    print("m_sensitivity: " + str(m_sensitivity))
+    print("--")
+    print("cv_specificity: " + str(cv_specificity))
+    print("t_specificity: " + str(t_specificity))
+    print("m_specificity: " + str(m_specificity))
+    print("--")
+    print("cv_auc: " + str(cv_auc))
+    print("t_auc: " + str(t_auc))
+    print("m_auc: " + str(m_auc))
+    print("--")
+    print("cv_accuracy: " + str(cv_acc))
+    print("t_accuracy: " + str(t_acc))
+    print("m_accuracy: " + str(m_acc))
 
 
 def getmodelstats(model, X, y):
