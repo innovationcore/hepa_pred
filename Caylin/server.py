@@ -18,6 +18,7 @@ def predict():
         clr = pickle.load(open('model.pkl', 'rb'))
         scaler = pickle.load(open('scaler.pkl', 'rb'))
         ret['results'] = clr.predict(scaler.transform(data)).tolist()
+        ret['probability'] = clr.redict_proba(scaler.transform(data)).tolist()
         ret['success'] = True
     except Exception as e:
         ret['error'] = str(e)
