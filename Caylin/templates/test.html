@@ -40,7 +40,7 @@
                             <input class="form-control" type="text" id="alt-input" name="alt" value="0" />
                         </div>
                         <div class="form-group">
-                            <label for="wbc-input">White Blood Cell Count ( × 109/L)</label>
+                            <label for="wbc-input">White Blood Cell Count ( × 10<sup>9</sup>/L)</label>
                             <input class="form-control" type="text" id="wbc-input" name="wbc" value="0" />
                         </div>
                         <div class="form-group">
@@ -117,11 +117,11 @@
             if (xhr.status === 200) {
                 var results = JSON.parse(xhr.response);
                 if (results.success) {
-                    var patient_result = (results.results[0] === 0)
-                    if (patient_result) {
-                        display_results("Predicted: Favorable", lightGreen)
+                    var patient_result = results.results[0];
+                    if (patient_result[0] > patient_result[1]) {
+                        display_results("Predicted: Favorable (" + (patient_result[0]*100).toFixed(2) + "%)", lightGreen)
                     } else {
-                        display_results("Predicted: Unfavorable", lightRed);
+                        display_results("Predicted: Unfavorable (" + (patient_result[1]*100).toFixed(2) + "%)", lightRed);
                     }
                 } else {
                     display_results("Failed! (Error: " + results.error + ")", darkRed);
