@@ -32,15 +32,15 @@
                             <input class="form-control" type="text" id="inr-input" name="inr" value="0" />
                         </div>
                         <div class="form-group">
-                            <label for="cr-input">Creatinine</label>
+                            <label for="cr-input">Creatinine (mg/dl)</label>
                             <input class="form-control" type="text" id="cr-input" name="cr" value="0" />
                         </div>
                         <div class="form-group">
-                            <label for="alt-input">Alanine Aminotransferase</label>
+                            <label for="alt-input">Alanine Aminotransferase ( IU/L)</label>
                             <input class="form-control" type="text" id="alt-input" name="alt" value="0" />
                         </div>
                         <div class="form-group">
-                            <label for="wbc-input">White Blood Cell Count</label>
+                            <label for="wbc-input">White Blood Cell Count ( × 109/L)</label>
                             <input class="form-control" type="text" id="wbc-input" name="wbc" value="0" />
                         </div>
                         <div class="form-group">
@@ -109,9 +109,9 @@
                 if (results.success) {
                     var patient_result = (results.results[0] === 0)
                     if (patient_result) {
-                        display_results("Predicted: Negative", lightGreen)
+                        display_results("Predicted: Favorable", lightGreen)
                     } else {
-                        display_results("Predicted: Positive", lightRed);
+                        display_results("Predicted: Unfavorable", lightRed);
                     }
                 } else {
                     display_results("Failed! (Error: " + results.error + ")", darkRed);
